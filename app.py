@@ -1,267 +1,295 @@
 import os
+import gradio as gr
 import joblib
 import pandas as pd
-import gradio as gr
+
+# ============================================
+# Load Trained Model
+# ============================================
+model = joblib.load("Salary_Prediction_Model.pkl")
 
 
-# =====================================
-# Load Model
-# =====================================
-
-MODEL_PATH = "Salary_Prediction_Model.pkl"
-
-try:
-    model = joblib.load(MODEL_PATH)
-
-except Exception as e:
-    raise Exception(
-        f"Model file loading error: {e}\n"
-        "Keep Salary_Prediction_Model.pkl in the same folder."
-    )
-
-
-
-# =====================================
+# ============================================
 # Prediction Function
-# =====================================
+# ============================================
+def predict_salary(age, experience, education, job):
 
-def predict_salary(age, experience, education):
+    data = {
+        "Age": age,
+        "Years of Experience": experience,
 
-    try:
+        "Education Level_Bachelor's": 0,
+        "Education Level_Bachelor's Degree": 0,
+        "Education Level_High School": 0,
+        "Education Level_Master's": 0,
+        "Education Level_Master's Degree": 0,
+        "Education Level_PhD": 0,
+        "Education Level_phD": 0,
+        "Education Level_others": 0,
 
-        # Raw input dataframe
-        input_data = pd.DataFrame(
-            {
-                "Age": [float(age)],
-                "Years of Experience": [float(experience)],
-                "Education Level": [education]
-            }
-        )
+        "Job Title_Back end Developer": 0,
+        "Job Title_Data Analyst": 0,
+        "Job Title_Data Scientist": 0,
+        "Job Title_Full Stack Engineer": 0,
+        "Job Title_Marketing Manager": 0,
+        "Job Title_Product Manager": 0,
+        "Job Title_Senior Project Engineer": 0,
+        "Job Title_Senior Software Engineer": 0,
+        "Job Title_Software Engineer": 0,
+        "Job Title_Software Engineer Manager": 0,
+        "Job Title_others": 0,
+    }
+
+    # Education Encoding
+    if education == "Bachelor's":
+        data["Education Level_Bachelor's"] = 1
+
+    elif education == "Bachelor's Degree":
+        data["Education Level_Bachelor's Degree"] = 1
+
+    elif education == "High School":
+        data["Education Level_High School"] = 1
+
+    elif education == "Master's":
+        data["Education Level_Master's"] = 1
+
+    elif education == "Master's Degree":
+        data["Education Level_Master's Degree"] = 1
+
+    elif education == "PhD":
+        data["Education Level_PhD"] = 1
+
+    else:
+        data["Education Level_others"] = 1
+
+    # Job Encoding
+    job_column = f"Job Title_{job}"
+
+    if job_column in data:
+        data[job_column] = 1
+    else:
+        data["Job Title_others"] = 1
+
+    df = pd.DataFrame([data])
+
+    prediction = model.predict(df)[0]
+
+    return f"💰 Predicted Salary : ₹ {prediction:,.2f}"
 
 
-        # Prediction
-        prediction = model.predict(input_data)[0]
-
-
-        return f"💰 Predicted Salary: ₹ {prediction:,.2f}"
-
-
-    except Exception as e:
-
-        return f"❌ Error: {str(e)}"
-
-
-
-# =====================================
+# ============================================
 # CSS
-# =====================================
-
+# ============================================
 css = """
-
 .gradio-container{
-
-    background:#eaf2f8;
-
+    background-image:url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2070&auto=format&fit=crop");
+    background-size:cover;
+    background-position:center;
+    background-attachment:fixed;
 }
 
-
-.container{
-
-    background:white;
-
-    padding:30px;
-
-    border-radius:20px;
-
-    box-shadow:0px 8px 20px rgba(0,0,0,0.15);
-
+/* Main Box */
+.box{
+    background:rgba(255,255,255,0.95);
+    padding:20px;
+    border-radius:18px;
+    box-shadow:0px 0px 20px rgba(0,0,0,0.3);
 }
 
-
-/* All text black */
-
-.container *{
-
+/* Make ALL text BLACK */
+.gradio-container,
+.gradio-container *{
     color:black !important;
-
 }
 
+/* Markdown */
+.prose,
+.prose p,
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose strong,
+.prose li{
+    color:black !important;
+}
 
+/* Labels */
+label{
+    color:black !important;
+    font-weight:bold !important;
+}
+
+/* Textbox */
+textarea,
+input{
+    color:black !important;
+    background:white !important;
+}
+
+/* Dropdown */
+select{
+    color:black !important;
+    background:white !important;
+}
+
+/* Output Textbox */
+textarea{
+    font-weight:bold;
+}
+
+/* Button */
+button{
+    color:white !important;
+    font-weight:bold !important;
+}
+
+/* Hide Footer */
 footer{
-
-    display:none;
-
+    visibility:hidden;
 }
-
 """
 
 
-
-# =====================================
-# Gradio Interface
-# =====================================
+# ============================================
+# Interface
+# ============================================
 
 with gr.Blocks(
     css=css,
     title="Salary Prediction"
 ) as demo:
 
-
-    with gr.Column(
-        elem_classes="container"
-    ):
-
+    with gr.Column(elem_classes="box"):
 
         gr.Markdown(
             """
-            # 💼 Salary Prediction System
+# 💼 Employee Salary Prediction
 
-            Predict employee salary using Machine Learning.
-            """
+Predict the salary of an employee using a Machine Learning model.
+"""
         )
-
-
-        gr.Markdown("---")
-
 
         with gr.Row():
 
-
-            # Input side
-
-            with gr.Column():
-
-
-                gr.Markdown(
-                    "## 📥 Employee Details"
-                )
-
+            # Left Side
+            with gr.Column(scale=2):
 
                 age = gr.Number(
                     label="Age",
                     value=25
                 )
 
-
                 experience = gr.Number(
                     label="Years of Experience",
                     value=2
                 )
 
-
                 education = gr.Dropdown(
-
-                    choices=[
+                    [
                         "Bachelor's",
                         "Bachelor's Degree",
                         "High School",
                         "Master's",
                         "Master's Degree",
                         "PhD",
-                        "Other"
+                        "Others",
                     ],
-
+                    label="Education Level",
                     value="Bachelor's",
-
-                    label="Education Level"
-
                 )
 
-
-                button = gr.Button(
-                    "🚀 Predict Salary"
+                job = gr.Dropdown(
+                    [
+                        "Back end Developer",
+                        "Data Analyst",
+                        "Data Scientist",
+                        "Full Stack Engineer",
+                        "Marketing Manager",
+                        "Product Manager",
+                        "Senior Project Engineer",
+                        "Senior Software Engineer",
+                        "Software Engineer",
+                        "Software Engineer Manager",
+                        "Others",
+                    ],
+                    label="Job Title",
+                    value="Software Engineer",
                 )
 
+                btn = gr.Button(
+                    "Predict Salary",
+                    variant="primary"
+                )
 
                 output = gr.Textbox(
-                    label="Prediction Result"
+                    label="Prediction",
+                    lines=2
                 )
 
-
-
-            # Developer details
-
-            with gr.Column():
-
+            # Right Side
+            with gr.Column(scale=1):
 
                 gr.Markdown(
                     """
-                    ## 👨‍💻 Developer Details
+# 👩‍💻 Developer Details
 
+**Name:** Manik
 
-                    **Name:**  
-                    Manik Jindal
+**College:**  
+Panipat Institute of Engineering and Technology
 
+---
 
-                    **College:**  
-                    Panipat Institute of Engineering and Technology
+## 📌 Project
 
+Salary Prediction using Linear Regression
 
-                    **Project:**  
-                    Salary Prediction using Machine Learning
+---
 
+## 🛠 Technology Used
 
-                    ## 🛠 Technology Stack
+- Python
+- Pandas
+- Scikit-Learn
+- Joblib
+- Gradio
 
+---
 
-                    - Python
-                    - Pandas
-                    - Scikit-Learn
-                    - Machine Learning
-                    - Joblib
-                    - Gradio
+## 📥 Input Features
 
+- Age
+- Years of Experience
+- Education Level
+- Job Title
 
-                    ## 📌 About Project
+---
 
+## 📤 Output
 
-                    This application predicts salary using:
-
-                    👤 Age
-
-                    💼 Years of Experience
-
-                    🎓 Education Level
-
-
-                    The trained Machine Learning model
-                    automatically processes the input data.
-                    """
+Predicted Employee Salary
+"""
                 )
 
-
-
-        button.click(
-
+        btn.click(
             fn=predict_salary,
-
             inputs=[
                 age,
                 experience,
-                education
+                education,
+                job,
             ],
-
-            outputs=output
-
+            outputs=output,
         )
 
 
-
-# =====================================
+# ============================================
 # Launch
-# =====================================
+# ============================================
 
 if __name__ == "__main__":
-
     demo.launch(
-
         server_name="0.0.0.0",
-
-        server_port=int(
-            os.environ.get(
-                "PORT",
-                7860
-            )
-        )
-
+        server_port=int(os.environ.get("PORT", 7860))
     )
