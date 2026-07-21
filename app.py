@@ -5,7 +5,7 @@ import gradio as gr
 
 
 # =====================================
-# Load Trained Model
+# Load Model
 # =====================================
 
 MODEL_PATH = "Salary_Prediction_Model.pkl"
@@ -13,20 +13,11 @@ MODEL_PATH = "Salary_Prediction_Model.pkl"
 try:
     model = joblib.load(MODEL_PATH)
 
-    try:
-        MODEL_FEATURES = list(model.feature_names_in_)
-    except:
-        MODEL_FEATURES = []
-
 except Exception as e:
     raise Exception(
-        f"❌ Model loading failed.\n"
-        f"Make sure {MODEL_PATH} is in the same folder.\n\n{e}"
+        f"Model file loading error: {e}\n"
+        "Keep Salary_Prediction_Model.pkl in the same folder."
     )
-
-
-print("Model Features:")
-print(MODEL_FEATURES)
 
 
 
@@ -38,68 +29,26 @@ def predict_salary(age, experience, education):
 
     try:
 
-        # Create input dictionary
-        input_data = {}
-
-
-        # Add numerical values
-        input_data["Age"] = float(age)
-        input_data["Years of Experience"] = float(experience)
-
-
-
-        # Default all model columns to zero
-        for feature in MODEL_FEATURES:
-
-            if feature not in input_data:
-                input_data[feature] = 0
-
-
-
-        # Education encoding
-        education_columns = {
-            "Bachelor's": "Education Level_Bachelor's",
-            "Bachelor's Degree": "Education Level_Bachelor's Degree",
-            "High School": "Education Level_High School",
-            "Master's": "Education Level_Master's",
-            "Master's Degree": "Education Level_Master's Degree",
-            "PhD": "Education Level_PhD",
-            "Other": "Education Level_Other"
-        }
-
-
-        selected_column = education_columns.get(
-            education,
-            "Education Level_Other"
+        # Raw input dataframe
+        input_data = pd.DataFrame(
+            {
+                "Age": [float(age)],
+                "Years of Experience": [float(experience)],
+                "Education Level": [education]
+            }
         )
 
 
-        if selected_column in input_data:
-            input_data[selected_column] = 1
-
-
-
-        # Create dataframe in exact model order
-        df = pd.DataFrame(
-            [input_data]
-        )
-
-
-        df = df[MODEL_FEATURES]
-
-
-
-        prediction = model.predict(df)[0]
+        # Prediction
+        prediction = model.predict(input_data)[0]
 
 
         return f"💰 Predicted Salary: ₹ {prediction:,.2f}"
 
 
-
     except Exception as e:
 
         return f"❌ Error: {str(e)}"
-
 
 
 
@@ -111,12 +60,12 @@ css = """
 
 .gradio-container{
 
-    background:#eef3f8;
+    background:#eaf2f8;
 
 }
 
 
-.main-box{
+.container{
 
     background:white;
 
@@ -124,23 +73,16 @@ css = """
 
     border-radius:20px;
 
-    box-shadow:0px 8px 25px rgba(0,0,0,0.15);
+    box-shadow:0px 8px 20px rgba(0,0,0,0.15);
 
 }
 
 
-/* Make all text black */
+/* All text black */
 
-.main-box *{
+.container *{
 
     color:black !important;
-
-}
-
-
-button{
-
-    font-weight:bold !important;
 
 }
 
@@ -156,7 +98,7 @@ footer{
 
 
 # =====================================
-# Gradio UI
+# Gradio Interface
 # =====================================
 
 with gr.Blocks(
@@ -166,15 +108,15 @@ with gr.Blocks(
 
 
     with gr.Column(
-        elem_classes="main-box"
+        elem_classes="container"
     ):
 
 
         gr.Markdown(
             """
-            # 💼 Salary Prediction using Machine Learning
+            # 💼 Salary Prediction System
 
-            Predict salary based on age, experience and education level.
+            Predict employee salary using Machine Learning.
             """
         )
 
@@ -182,17 +124,16 @@ with gr.Blocks(
         gr.Markdown("---")
 
 
-
         with gr.Row():
 
 
-            # Input Section
+            # Input side
 
-            with gr.Column(scale=2):
+            with gr.Column():
 
 
                 gr.Markdown(
-                    "## 📥 Enter Details"
+                    "## 📥 Employee Details"
                 )
 
 
@@ -223,10 +164,11 @@ with gr.Blocks(
                     value="Bachelor's",
 
                     label="Education Level"
+
                 )
 
 
-                predict_btn = gr.Button(
+                button = gr.Button(
                     "🚀 Predict Salary"
                 )
 
@@ -237,9 +179,9 @@ with gr.Blocks(
 
 
 
-            # Developer Section
+            # Developer details
 
-            with gr.Column(scale=1):
+            with gr.Column():
 
 
                 gr.Markdown(
@@ -259,13 +201,13 @@ with gr.Blocks(
                     Salary Prediction using Machine Learning
 
 
-                    ## 🛠 Technology Used
+                    ## 🛠 Technology Stack
 
 
                     - Python
                     - Pandas
                     - Scikit-Learn
-                    - Regression Model
+                    - Machine Learning
                     - Joblib
                     - Gradio
 
@@ -273,23 +215,23 @@ with gr.Blocks(
                     ## 📌 About Project
 
 
-                    This application predicts employee salary
-                    using:
+                    This application predicts salary using:
+
+                    👤 Age
+
+                    💼 Years of Experience
+
+                    🎓 Education Level
 
 
-                    👤 Age  
-                    💼 Years of Experience  
-                    🎓 Education Level  
-
-
-                    The prediction is generated using a trained
-                    Machine Learning model.
+                    The trained Machine Learning model
+                    automatically processes the input data.
                     """
                 )
 
 
 
-        predict_btn.click(
+        button.click(
 
             fn=predict_salary,
 
