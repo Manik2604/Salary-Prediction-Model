@@ -3,127 +3,323 @@ import joblib
 import pandas as pd
 import gradio as gr
 
-# ===========================
-# Load Model
-# ===========================
+
+# =====================================
+# Load Trained Model
+# =====================================
 
 MODEL_PATH = "Salary_Prediction_Model.pkl"
 
-model = joblib.load(MODEL_PATH)
+try:
+    model = joblib.load(MODEL_PATH)
 
-# ===========================
-# Prediction
-# ===========================
+    try:
+        MODEL_FEATURES = list(model.feature_names_in_)
+    except:
+        MODEL_FEATURES = []
+
+except Exception as e:
+    raise Exception(
+        f"❌ Model loading failed.\n"
+        f"Make sure {MODEL_PATH} is in the same folder.\n\n{e}"
+    )
+
+
+print("Model Features:")
+print(MODEL_FEATURES)
+
+
+
+# =====================================
+# Prediction Function
+# =====================================
 
 def predict_salary(age, experience, education):
 
-    data = {
-        "Age": float(age),
-        "Years of Experience": float(experience),
+    try:
 
-        "Job Title_Other": 1,
-
-        "Education Level_Bachelor's": 0,
-        "Education Level_Bachelor's Degree": 0,
-        "Education Level_High School": 0,
-        "Education Level_Master's": 0,
-        "Education Level_Master's Degree": 0,
-        "Education Level_Other": 0,
-        "Education Level_PhD": 0,
-        "Education Level_phD": 0,
-    }
-
-    if education == "Bachelor's":
-        data["Education Level_Bachelor's"] = 1
-
-    elif education == "Bachelor's Degree":
-        data["Education Level_Bachelor's Degree"] = 1
-
-    elif education == "High School":
-        data["Education Level_High School"] = 1
-
-    elif education == "Master's":
-        data["Education Level_Master's"] = 1
-
-    elif education == "Master's Degree":
-        data["Education Level_Master's Degree"] = 1
-
-    elif education == "PhD":
-        data["Education Level_PhD"] = 1
-
-    else:
-        data["Education Level_Other"] = 1
-
-    df = pd.DataFrame([data])
-
-    prediction = model.predict(df)[0]
-
-    return f"₹ {prediction:,.2f}"
+        # Create input dictionary
+        input_data = {}
 
 
-# ===========================
+        # Add numerical values
+        input_data["Age"] = float(age)
+        input_data["Years of Experience"] = float(experience)
+
+
+
+        # Default all model columns to zero
+        for feature in MODEL_FEATURES:
+
+            if feature not in input_data:
+                input_data[feature] = 0
+
+
+
+        # Education encoding
+        education_columns = {
+            "Bachelor's": "Education Level_Bachelor's",
+            "Bachelor's Degree": "Education Level_Bachelor's Degree",
+            "High School": "Education Level_High School",
+            "Master's": "Education Level_Master's",
+            "Master's Degree": "Education Level_Master's Degree",
+            "PhD": "Education Level_PhD",
+            "Other": "Education Level_Other"
+        }
+
+
+        selected_column = education_columns.get(
+            education,
+            "Education Level_Other"
+        )
+
+
+        if selected_column in input_data:
+            input_data[selected_column] = 1
+
+
+
+        # Create dataframe in exact model order
+        df = pd.DataFrame(
+            [input_data]
+        )
+
+
+        df = df[MODEL_FEATURES]
+
+
+
+        prediction = model.predict(df)[0]
+
+
+        return f"💰 Predicted Salary: ₹ {prediction:,.2f}"
+
+
+
+    except Exception as e:
+
+        return f"❌ Error: {str(e)}"
+
+
+
+
+# =====================================
 # CSS
-# ===========================
+# =====================================
 
 css = """
+
 .gradio-container{
-background-image:url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2070&auto=format&fit=crop");
-background-size:cover;
-background-position:center;
-background-attachment:fixed;
+
+    background:#eef3f8;
+
 }
 
-.box{
-background:rgba(255,255,255,.93);
-padding:25px;
-border-radius:18px;
+
+.main-box{
+
+    background:white;
+
+    padding:30px;
+
+    border-radius:20px;
+
+    box-shadow:0px 8px 25px rgba(0,0,0,0.15);
+
 }
 
-footer{visibility:hidden;}
+
+/* Make all text black */
+
+.main-box *{
+
+    color:black !important;
+
+}
+
+
+button{
+
+    font-weight:bold !important;
+
+}
+
+
+footer{
+
+    display:none;
+
+}
+
 """
 
-# ===========================
-# UI
-# ===========================
 
-with gr.Blocks(css=css,title="Salary Prediction") as demo:
 
-    with gr.Column(elem_classes="box"):
+# =====================================
+# Gradio UI
+# =====================================
 
-        gr.Markdown("# 💼 Salary Prediction")
+with gr.Blocks(
+    css=css,
+    title="Salary Prediction"
+) as demo:
 
-        age = gr.Number(label="Age",value=25)
 
-        experience = gr.Number(
-            label="Years of Experience",
-            value=2
+    with gr.Column(
+        elem_classes="main-box"
+    ):
+
+
+        gr.Markdown(
+            """
+            # 💼 Salary Prediction using Machine Learning
+
+            Predict salary based on age, experience and education level.
+            """
         )
 
-        education = gr.Dropdown(
-            [
-                "Bachelor's",
-                "Bachelor's Degree",
-                "High School",
-                "Master's",
-                "Master's Degree",
-                "PhD",
-                "Other"
+
+        gr.Markdown("---")
+
+
+
+        with gr.Row():
+
+
+            # Input Section
+
+            with gr.Column(scale=2):
+
+
+                gr.Markdown(
+                    "## 📥 Enter Details"
+                )
+
+
+                age = gr.Number(
+                    label="Age",
+                    value=25
+                )
+
+
+                experience = gr.Number(
+                    label="Years of Experience",
+                    value=2
+                )
+
+
+                education = gr.Dropdown(
+
+                    choices=[
+                        "Bachelor's",
+                        "Bachelor's Degree",
+                        "High School",
+                        "Master's",
+                        "Master's Degree",
+                        "PhD",
+                        "Other"
+                    ],
+
+                    value="Bachelor's",
+
+                    label="Education Level"
+                )
+
+
+                predict_btn = gr.Button(
+                    "🚀 Predict Salary"
+                )
+
+
+                output = gr.Textbox(
+                    label="Prediction Result"
+                )
+
+
+
+            # Developer Section
+
+            with gr.Column(scale=1):
+
+
+                gr.Markdown(
+                    """
+                    ## 👨‍💻 Developer Details
+
+
+                    **Name:**  
+                    Manik Jindal
+
+
+                    **College:**  
+                    Panipat Institute of Engineering and Technology
+
+
+                    **Project:**  
+                    Salary Prediction using Machine Learning
+
+
+                    ## 🛠 Technology Used
+
+
+                    - Python
+                    - Pandas
+                    - Scikit-Learn
+                    - Regression Model
+                    - Joblib
+                    - Gradio
+
+
+                    ## 📌 About Project
+
+
+                    This application predicts employee salary
+                    using:
+
+
+                    👤 Age  
+                    💼 Years of Experience  
+                    🎓 Education Level  
+
+
+                    The prediction is generated using a trained
+                    Machine Learning model.
+                    """
+                )
+
+
+
+        predict_btn.click(
+
+            fn=predict_salary,
+
+            inputs=[
+                age,
+                experience,
+                education
             ],
-            value="Bachelor's",
-            label="Education"
+
+            outputs=output
+
         )
 
-        btn = gr.Button("Predict Salary")
 
-        output = gr.Textbox(label="Prediction")
 
-        btn.click(
-            predict_salary,
-            [age,experience,education],
-            output
+# =====================================
+# Launch
+# =====================================
+
+if __name__ == "__main__":
+
+    demo.launch(
+
+        server_name="0.0.0.0",
+
+        server_port=int(
+            os.environ.get(
+                "PORT",
+                7860
+            )
         )
 
-demo.launch(
-    server_name="0.0.0.0",
-    server_port=int(os.environ.get("PORT",7860))
-)
+    )
