@@ -99,7 +99,7 @@ css = """
 /* Make ALL text BLACK */
 .gradio-container,
 .gradio-container *{
-    color:yellow !important;
+    color:white !important;
 }
 
 /* Markdown */
@@ -140,7 +140,7 @@ textarea{
 
 /* Button */
 button{
-    color:black !important;
+    color:white !important;
     font-weight:bold !important;
 }
 
