@@ -140,7 +140,7 @@ textarea{
 
 /* Button */
 button{
-    color:white !important;
+    color:black !important;
     font-weight:bold !important;
 }
 
