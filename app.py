@@ -99,7 +99,7 @@ css = """
 /* Make ALL text BLACK */
 .gradio-container,
 .gradio-container *{
-    color:white !important;
+    color:yellow !important;
 }
 
 /* Markdown */
