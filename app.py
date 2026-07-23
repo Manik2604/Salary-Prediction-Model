@@ -234,9 +234,9 @@ Predict the salary of an employee using a Machine Learning model.
                     """
 # 👩‍💻 Developer Details
 
-*Name:* Manik
+**Name:** Manik
 
-*College:*  
+**College:**  
 Panipat Institute of Engineering and Technology
 
 ---
@@ -247,7 +247,7 @@ Salary Prediction using Linear Regression
 
 ---
 
-## 🛠️ Technology Used
+## 🛠 Technology Used
 
 - Python
 - Pandas
